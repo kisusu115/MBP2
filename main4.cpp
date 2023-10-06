@@ -12,7 +12,7 @@ void edit();
 void totalQuiz();
 void bookmarkQuiz();
 void quiz();
-bool checkEng(const string& str);
+bool checkEng(string str);
 
 class Word { // 한국어, 영어, 북마크 여부를 가진 Class Word
 public:
@@ -455,17 +455,16 @@ void quiz() {
 /*
 영어단어인지 확인하는 함수 (true 반환 시 조건 충족)
 */
-bool checkEng(const string& str) {
+bool checkEng(string str) {
 
-	string tmp = str;
-	tmp = lowerString(tmp);
+	str = lowerString(str);
 
-	if (tmp.size() > 30) {
+	if (str.size() > 30) {
 		return 0;				//문자열 길이 최대 30 제한
 	}
 
 	bool hasEng = false;		//알파벳 하나없이 공백이랑 '-'만 있는지 체크하기위해
-	for (char c : tmp) {
+	for (char c : str) {
 		if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == ' ') || (c == '-'))) {
 			return 0;
 		}
