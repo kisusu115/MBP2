@@ -107,6 +107,12 @@ int main() {
 	string 전체를 lowercase로 변환 (string끼리 비교하기 쉽도록)
 */
 string lowerString(string& str) {
+
+	size_t start = str.find_first_not_of(" \t");
+	if (start == string::npos) { return ""; }
+	size_t end = str.find_last_not_of(" \t");
+	str = str.substr(start, end - start + 1);
+
 	string out = str;
 	for (char& c : out) {
 		c = tolower(c);
