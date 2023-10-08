@@ -307,8 +307,7 @@ void totalQuiz() {
 				cout << "해당 단어를 북마크에 추가 하시겠습니까? (Y/N)" << endl;
 				string choice;
 				while (true) {
-					cin >> choice;
-					cin.ignore();
+					getline(cin, choice);
 					choice = lowerString(choice);
 					if (choice == "y") {
 						wordList[randomIndex].bookmarked = true; // 오답 노트에 추가
