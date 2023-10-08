@@ -105,16 +105,15 @@ int main() {
 }
 
 /*
-	string 전체를 lowercase로 변환 (string끼리 비교하기 쉽도록)
+	string의 앞뒤 공백을 자르고, 전체를 lowercase로 변환 (string끼리 비교하기 쉽도록)
 */
 string lowerString(string& str) {
 
 	size_t start = str.find_first_not_of(" \t");
 	if (start == string::npos) { return ""; }
 	size_t end = str.find_last_not_of(" \t");
-	str = str.substr(start, end - start + 1);
+	string out = str.substr(start, end - start + 1);
 
-	string out = str;
 	for (char& c : out) {
 		c = tolower(c);
 	}
@@ -239,6 +238,12 @@ void totalQuiz() {
 		return;
 	}
 
+	vector<int> quizIndexVector;
+
+	for (int i = 0; i < wordList.size(); i++) {
+		quizIndexVector.push_back(i);
+	}
+
 	while (true) {
 		cout << "퀴즈 문제 수를 입력하세요: ";
 		cin >> goalCount;
@@ -252,12 +257,6 @@ void totalQuiz() {
 			break;
 		else
 			cout << "저장된 단어 수 (" << wordList.size() << ") 보다 퀴즈 문제 수가 더 많습니다. 다시 입력해주세요." << endl;
-	}
-
-	vector<int> quizIndexVector;
-
-	for (int i = 0; i < wordList.size(); i++) {
-		quizIndexVector.push_back(i);
 	}
 
 	// quizIndexVector를 섞어서 인덱스가 랜덤한 순서로 등장하게 만들기
@@ -311,9 +310,9 @@ void totalQuiz() {
 			}
 			else {
 				cout << "해당 단어는 이미 북마크에 존재합니다." << endl;
+				cin.get();
 			}
 			cin.ignore();
-			cin.get();
 		}
 	}
 	
