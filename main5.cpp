@@ -41,7 +41,7 @@ void loadWordsFromFile() {
 			if (pos != string::npos) {
 				string eng = line.substr(0, pos);
 				string kor = line.substr(pos + 1, pos2 - pos - 1);
-				string b_marked = line.substr(pos2);
+				string b_marked = line.substr(pos2+1);
 				bool bookmarked;
 				if (b_marked == "1") bookmarked = true;
 				else bookmarked = false;
