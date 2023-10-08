@@ -492,10 +492,10 @@ bool checkEng(string str) {
 
 	bool hasEng = false;		//알파벳 하나없이 공백이랑 '-'만 있는지 체크하기위해
 	for (char c : str) {
-		if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == ' ') || (c == '-'))) {
+		if (!((c >= 'a' && c <= 'z') || (c == ' ') || (c == '-'))) {
 			return 0;
 		}
-		if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+		if (c >= 'a' && c <= 'z') {
 			hasEng = true;		//알파벳 최소 1개라도 발견하면 hasEng를 true로 변환
 		}
 	}
