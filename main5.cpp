@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
-#include <atlconv.h>
+#include <locale>
 
 using namespace std;
 
@@ -14,6 +14,23 @@ void totalQuiz();
 void bookmarkQuiz();
 void quiz();
 bool checkEng(string str);
+bool checkKor(wstring& str);
+
+wstring s2w(const string& str)
+{
+	static locale loc("");
+	auto& facet = use_facet<codecvt<wchar_t, char, mbstate_t>>(loc);
+	return wstring_convert<remove_reference<decltype(facet)>::type, wchar_t>(&facet).from_bytes(str);
+}
+
+
+string w2s(const wstring& wstr)
+{
+	static locale loc("");
+	auto& facet = use_facet<codecvt<wchar_t, char, mbstate_t>>(loc);
+	return wstring_convert<remove_reference<decltype(facet)>::type, wchar_t>(&facet).to_bytes(wstr);
+}
+
 
 class Word { // 한국어, 영어, 북마크 여부를 가진 Class Word
 public:
@@ -22,20 +39,11 @@ public:
 	bool bookmarked;
 
 	Word(const string& eng, const string& kor) : eng(eng), kor(kor), bookmarked(0) {}
-
 	Word(const string& eng, const string& kor, bool& bookmarked) : eng(eng), kor(kor), bookmarked(bookmarked) {}
 };
 
 vector<Word> wordList; // Word 객체 저장 vector인 wordList
 
-// 유니코드를 멀티바이트로 변환시켜주는 함수
-wstring strconv(const string& _src)
-
-{
-	USES_CONVERSION;
-
-	return wstring(A2W(_src.c_str()));
-};
 
 /*
 txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
@@ -49,7 +57,6 @@ void loadWordsFromFile() {
 			size_t pos = line.find("/");
 			size_t pos2 = line.rfind("/");
 
-			// 파일 무결성 검사 코드
 			if (pos == string::npos || pos2 == string::npos)
 			{
 				cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
@@ -57,43 +64,24 @@ void loadWordsFromFile() {
 				return;
 			}
 
+
 			if (pos != string::npos) {
 				string eng = line.substr(0, pos);
-				string kor = line.substr(pos + 1, pos2 - pos - 1);
-				string b_marked = line.substr(pos2+1);
-
-				// 파일 무결성 검사 코드
-				for (int i = 0; i < pos; i++)
-				{
-					if (eng[i] < 65 || eng[i] > 122)
-					{
-						cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
-						file.close();
-						exit(0);
-					}
-				}
-
-				wstring comKor = strconv(kor);
-				for (int i = 0; i < comKor.length(); i++)
-				{
-
-					if (comKor[i] < 44032 || comKor[i] > 55199)
-					{
-						cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
-						file.close();
-						exit(0);
-					}
-				}
-				bool bookmarked;
-				if (b_marked == "1") bookmarked = true;
-				else if (b_marked == "0") bookmarked = false;
-				// 파일 무결성 검사 코드
-				else
-				{
-					cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
-					file.close();
+				if (checkEng(eng) == 0) {
+					cout << "데이터 파일의 문법 규칙이 잘못되었습니다.";
 					exit(0);
 				}
+				string kor = line.substr(pos + 1, pos2 - pos - 1);
+				wstring k = s2w(kor);
+				if (checkKor(k) == 0) {
+					cout << "데이터 파일의 문법 규칙이 잘못되었습니다.";
+					exit(0);
+				}
+				kor = w2s(k);
+				string b_marked = line.substr(pos2);
+				bool bookmarked;
+				if (b_marked == "true") bookmarked = true;
+				else bookmarked = false;
 				wordList.push_back(Word(eng, kor, bookmarked));
 			}
 		}
@@ -103,6 +91,7 @@ void loadWordsFromFile() {
 		cerr << "Error: Word.txt를 불러올 수 없습니다." << endl;
 	}
 }
+
 
 /*
 현재 프로그램 내의 Word 객체들을 호출된 시점 기준으로 txt파일에 저장하는 함수
@@ -121,6 +110,7 @@ void saveWordsToFile() {
 }
 
 int main() {
+	setlocale(LC_ALL, "korean");
 
 	int menuSelect;	// 메뉴 입력받으려고 선언
 	loadWordsFromFile();
@@ -161,9 +151,9 @@ int main() {
 */
 string lowerString(string& str) {
 
-	size_t start = str.find_first_not_of(" \t");
+	size_t start = str.find_first_not_of(" ");
 	if (start == string::npos) { return ""; }
-	size_t end = str.find_last_not_of(" \t");
+	size_t end = str.find_last_not_of(" ");
 	str = str.substr(start, end - start + 1);
 
 	string out = str;
@@ -189,8 +179,12 @@ void edit() {
 		auto it = wordList.begin();
 
 		cout << "영단어 입력(종료-Q): ";
-		cin >> s;
+		getline(cin, s);
 		s = lowerString(s);
+
+		if (!checkEng(s)) {  // 영어단어 문법검사, 일단 break 로 구현해놨으나 경고창을 띄울지 토의
+			continue;
+		}
 
 		if (s == "q") {		// 종료
 			break;
@@ -210,13 +204,21 @@ void edit() {
 			cout << "[" << s << "] 단어를 추가하시겠습니까? (Y/N)" << endl;
 			string choice;
 			while (true) {
-				cin >> choice;
+				getline(cin, choice);
 				choice = lowerString(choice);
 
 				if (choice == "y") {
 					cout << s << "의 뜻을 입력하세요: ";
-					string k;
-					cin >> k;
+					wstring kor;
+					cin.ignore();
+					getline(wcin, kor);
+
+					while (checkKor(kor) != 1) {
+						cout << "다시 입력해주세요." << endl;
+						getline(wcin, kor);
+					}
+
+					string k = w2s(kor);
 
 					wordList.push_back(Word(s, k));
 					saveWordsToFile();
@@ -240,7 +242,7 @@ void edit() {
 			cout << "해당 단어를 삭제하시겠습니까? (Y/N)" << endl;
 			string choice;
 			while (true) {
-				cin >> choice;
+				getline(cin, choice);
 				choice = lowerString(choice);
 				if (choice == "y") {
 
@@ -551,4 +553,24 @@ bool checkEng(string str) {
 	if (!hasEng) return 0;		//알파벳 하나도 없으면 영단어 조건 만족하지 못하므로
 
 	return 1;  // 영어 알파벳 조건을 만족시킴
+}
+
+/*
+한글 뜻인지 확인하는 함수 (true 반환 시 조건 충족)
+*/
+bool checkKor(wstring& str) {
+	int npos;
+	npos = str.find_first_not_of(' ');
+	str.erase(0, npos);
+	npos = str.find_last_not_of(' ');
+	str.erase(npos + 1);
+
+	if (str.size() > 30 || str.size() == 0) {
+		return 0;
+	}
+	for (int i = 0; i < str.size(); i++) {
+		if (str[i] != 32 && (str[i] < 44032 || str[i] > 55199))
+			return 0;
+	}
+	return 1;
 }
