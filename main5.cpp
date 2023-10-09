@@ -443,7 +443,7 @@ void bookmarkQuiz() {
 	mt19937 g(rd()); // Mersenne Twister pseudo - random generator
 	shuffle(bookmarkQuizIndexVector.begin(), bookmarkQuizIndexVector.end(), g);
 
-	for (int i = 0; i < bookmarkQuizIndexVector.size(); i++) {
+	for (int i = 0; i < goalCount; i++) {
 		system("cls"); // 화면 지우기 (Windows)
 
 		int randomIndex = bookmarkQuizIndexVector[i];
@@ -471,9 +471,9 @@ void bookmarkQuiz() {
 		}
 		else {
 			cout << "틀렸습니다." << endl;
-			cin.ignore();
 			wrong++;
 			cout << "틀린 단어의 정답: " << wordList[randomIndex].eng << endl; // 오답노트 퀴즈기에 따로 설정 X
+			cin.ignore();
 		}
 	}
 
