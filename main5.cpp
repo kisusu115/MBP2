@@ -78,9 +78,9 @@ void loadWordsFromFile() {
 					exit(0);
 				}
 				kor = w2s(k);
-				string b_marked = line.substr(pos2);
+				string b_marked = line.substr(pos2+1);
 				bool bookmarked;
-				if (b_marked == "true") bookmarked = true;
+				if (b_marked == "1") bookmarked = true;
 				else bookmarked = false;
 				wordList.push_back(Word(eng, kor, bookmarked));
 			}
