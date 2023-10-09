@@ -469,7 +469,23 @@ void bookmarkQuiz() {
 			cout << "정답!" << endl;
 			cin.ignore();
 			right++;
-			wordList[randomIndex].bookmarked = false; // 오답 노트에서 제거 맞추면 제거하는 방식
+			cout << "해당 단어를 북마크에 제거 하시겠습니까? (Y/N)" << endl;
+			string choice;
+			while (true) {
+				getline(cin, choice);
+				choice = lowerString(choice);
+				if (choice == "y") {
+					wordList[randomIndex].bookmarked = false; // 오답 노트에 삭제
+					saveWordsToFile();                       // Word 객체 변환 후 즉시 txt 수정
+					break;
+				}
+				else if (choice == "n") {
+					break;
+				}
+				else {
+					cout << "다시 입력해주세요." << endl;
+				}
+			}
 		}
 		else {
 			cout << "틀렸습니다." << endl;
