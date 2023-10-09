@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <atlconv.h>
 
 using namespace std;
 
@@ -27,6 +28,15 @@ public:
 
 vector<Word> wordList; // Word 객체 저장 vector인 wordList
 
+// 유니코드를 멀티바이트로 변환시켜주는 함수
+wstring strconv(const string& _src)
+
+{
+	USES_CONVERSION;
+
+	return wstring(A2W(_src.c_str()));
+};
+
 /*
 txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
 */
@@ -38,13 +48,52 @@ void loadWordsFromFile() {
 		while (getline(file, line)) {
 			size_t pos = line.find("/");
 			size_t pos2 = line.rfind("/");
+
+			// 파일 무결성 검사 코드
+			if (pos == string::npos || pos2 == string::npos)
+			{
+				cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+				file.close();
+				return;
+			}
+
 			if (pos != string::npos) {
 				string eng = line.substr(0, pos);
 				string kor = line.substr(pos + 1, pos2 - pos - 1);
 				string b_marked = line.substr(pos2+1);
+
+				// 파일 무결성 검사 코드
+				for (int i = 0; i < pos; i++)
+				{
+					if (eng[i] < 65 || eng[i] > 122)
+					{
+						cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+						file.close();
+						exit(0);
+					}
+				}
+
+				wstring comKor = strconv(kor);
+				for (int i = 0; i < comKor.length(); i++)
+				{
+
+					if (comKor[i] < 44032 || comKor[i] > 55199)
+					{
+						cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+						file.close();
+						exit(0);
+					}
+				}
 				bool bookmarked;
 				if (b_marked == "1") bookmarked = true;
-				else bookmarked = false;
+				else if (b_marked == "0") bookmarked = false;
+				// 파일 무결성 검사 코드
+				else
+				{
+					cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+					file.close();
+					exit(0);
+				}
 				wordList.push_back(Word(eng, kor, bookmarked));
 			}
 		}
