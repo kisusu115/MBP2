@@ -13,7 +13,7 @@ void edit();
 void totalQuiz();
 void bookmarkQuiz();
 void quiz();
-bool checkEng(string str);
+bool checkEng(string& str);
 bool checkKor(wstring& str);
 
 wstring s2w(const string& str)
@@ -68,17 +68,17 @@ void loadWordsFromFile() {
 			if (pos != string::npos) {
 				string eng = line.substr(0, pos);
 				if (checkEng(eng) == 0) {
-					cout << "데이터 파일의 문법 규칙이 잘못되었습니다.";
+					cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
 					exit(0);
 				}
 				string kor = line.substr(pos + 1, pos2 - pos - 1);
 				wstring k = s2w(kor);
 				if (checkKor(k) == 0) {
-					cout << "데이터 파일의 문법 규칙이 잘못되었습니다.";
+					cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
 					exit(0);
 				}
 				kor = w2s(k);
-				string b_marked = line.substr(pos2+1);
+				string b_marked = line.substr(pos2 + 1);
 				bool bookmarked;
 				if (b_marked == "1") bookmarked = true;
 				else bookmarked = false;
@@ -86,6 +86,17 @@ void loadWordsFromFile() {
 			}
 		}
 		file.close();
+
+
+		for (int i = 0; i < wordList.size() - 1; i++) {
+			for (int j = i + 1; j < wordList.size(); j++) {
+				if (wordList[i].eng == wordList[j].eng) {
+					cout << "Word.txt 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+					exit(0);
+				}
+			}
+		}
+
 	}
 	else {
 		cerr << "Error: Word.txt를 불러올 수 없습니다." << endl;
@@ -548,7 +559,7 @@ void quiz() {
 /*
 영어단어인지 확인하는 함수 (true 반환 시 조건 충족)
 */
-bool checkEng(string str) {
+bool checkEng(string& str) {
 
 	str = lowerString(str);
 
