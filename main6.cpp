@@ -524,14 +524,14 @@ void totalQuiz() {
 
     if (wordList.empty()) {
         cout << "단어가 없습니다. 먼저 단어를 추가하세요." << endl;
-        cout << "수정 메뉴-Q" << endl;
+        cout << "메인메뉴로 이동-Q" << endl;
         getline(cin, userinput);
         userinput = lowerString(userinput);
         while (userinput != "q")
         {
             system("cls");
             cout << "단어가 없습니다. 먼저 단어를 추가하세요." << endl;
-            cout << "수정 메뉴-Q" << endl;
+            cout << "메인메뉴로 이동-Q" << endl;
             cout << "Q만 입력해주세요" << endl;
             getline(cin, userinput);
             userinput = lowerString(userinput);
@@ -714,14 +714,14 @@ void wrongQuiz() {
 
     if (wrongWordList.empty()) {
         cout << "현재 오답노트에 단어가 없습니다." << endl;
-        cout << "수정 메뉴-Q" << endl;
+        cout << "메인메뉴로 이동-Q" << endl;
         getline(cin, userinput);
         userinput = lowerString(userinput);
         while (userinput != "q")
         {
             system("cls");
             cout << "현재 오답노트에 단어가 없습니다." << endl;
-            cout << "수정 메뉴-Q" << endl;
+            cout << "메인메뉴로 이동-Q" << endl;
             cout << "Q만 입력해주세요" << endl;
             getline(cin, userinput);
             userinput = lowerString(userinput);
