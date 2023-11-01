@@ -337,7 +337,7 @@ int main() {
         else {
             system("cls");
             cout << "1. 영단어 퀴즈     2. 영단어 수정     3. 오답단어 조회 \n4. 종료\n";
-            cout << "올바르지 못한 입력입니다." << endl;
+            cout << "올바르지 못한 입력입니다. 다시 입력해주세요 : " << endl;
         }
 
     }
@@ -592,6 +592,7 @@ void totalQuiz() {
 
         if (userInput == "q") {
             qCheck = true;
+            system("cls");
             break;
         }
 
@@ -605,7 +606,7 @@ void totalQuiz() {
             {
                 system("cls");
                 cout << "정답!" << endl;
-                cout << "다음문제로 - Q" << endl;
+                cout << "다음 문제로 - Q" << endl;
                 cout << "Q만 입력해주세요." << endl;
                 getline(cin, userinput);
                 userinput = lowerString(userinput);
@@ -628,6 +629,7 @@ void totalQuiz() {
                 }
             }
 
+
             if (!exist) {
                 cout << "해당 단어를 오답노트에 추가 하시겠습니까? (Y/N)" << endl;
                 string choice;
@@ -648,8 +650,23 @@ void totalQuiz() {
                 }
             }
             else {
-                cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
                 pushWrongWordLists(wordList[randomIndex].eng, wordList[randomIndex].kor, false); // 오답 노트에 추가하지 않고 뜻만 덮어쓰기
+                cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
+                cout << "다음 문제로 - Q" << endl;
+                getline(cin, userinput);
+                userinput = lowerString(userinput);
+                while (userinput != "q")
+                {
+                    system("cls");
+                    cout << "틀렸습니다." << endl;
+                    cout << "틀린 단어의 정답: " << wordList[randomIndex].eng << endl;
+                    cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
+                    cout << "다음 문제로 - Q" << endl;
+                    cout << "Q만 입력해주세요." << endl;
+                    getline(cin, userinput);
+                    userinput = lowerString(userinput);
+                }
+
                 saveWordsToFiles();   // 즉시 txt 수정
             }
         }
@@ -667,6 +684,11 @@ void totalQuiz() {
         while (userinput != "q")
         {
             system("cls");
+            cout << "퀴즈 종료" << endl;
+            cout << "전체 문제 수: " << goalCount << endl;
+            cout << "맞은 문제 수: " << right << endl;
+            cout << "틀린 문제 수: " << wrong << endl;
+            cout << "정답률: " << (right / (double)goalCount) * 100 << "%" << endl;
             cout << "메뉴로 이동-Q" << endl;
             cout << "Q만 입력해주세요" << endl;
             getline(cin, userinput);
@@ -704,6 +726,7 @@ void wrongQuiz() {
             getline(cin, userinput);
             userinput = lowerString(userinput);
         }
+        system("cls");
         return;
     }
 
@@ -760,6 +783,7 @@ void wrongQuiz() {
 
         if (userInput == "q") {
             qCheck = true;
+            system("cls");
             break;
         }
 
@@ -793,6 +817,19 @@ void wrongQuiz() {
             cout << "틀렸습니다." << endl;
             wrong++;
             cout << "틀린 단어의 정답: " << randomWord.eng << endl; // 오답노트 퀴즈이므로 따로 설정 X
+            cout << "다음 문제로 - Q" << endl;
+            getline(cin, userinput);
+            userinput = lowerString(userinput);
+            while (userinput != "q")
+            {
+                system("cls");
+                cout << "틀렸습니다." << endl;
+                cout << "틀린 단어의 정답: " << randomWord.eng << endl;
+                cout << "다음 문제로 - Q" << endl;
+                cout << "Q만 입력해주세요." << endl;
+                getline(cin, userinput);
+                userinput = lowerString(userinput);
+            }
 
         }
     }
@@ -810,10 +847,16 @@ void wrongQuiz() {
         while (userinput != "q")
         {
             system("cls");
+            cout << "퀴즈 종료" << endl;
+            cout << "전체 문제 수: " << goalCount << endl;
+            cout << "맞은 문제 수: " << right << endl;
+            cout << "틀린 문제 수: " << wrong << endl;
+            cout << "정답률: " << (right / (double)goalCount) * 100 << "%" << endl;
             cout << "메뉴로 이동-Q" << endl;
             cout << "Q만 입력해주세요" << endl;
             getline(cin, userinput);
             userinput = lowerString(userinput);
+
         }
         system("cls");
     }
