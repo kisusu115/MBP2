@@ -70,6 +70,12 @@ string lowerString(string& str) {
     return out;
 }
 
+/*
+입력값으로 들어온 문자열의 구성요소가 모두 숫자인지 판별하여, stoi적용 가능 시 적용한 해당 정수를 반환하고, 적용 불가능 시 -1을 반환함
+EX) str가 "123"이나 "  123 "이면 123리턴, str이 "a357"이나 "Apple"이면 -1 리턴
+@param str 인자로 받는 string 보통 메뉴에서의 입력값이나 퀴즈 문제 풀이에서 문제수를 설정하기위해 입력 받았던 string이 들어감
+@return 입력받은 string을 정수로 변환, 정수로 변환 불가능한 문자열은 걸러내어 -1 리턴 
+*/
 int input2int(string& str) {
     int npos;
     npos = str.find_first_not_of(' ');
