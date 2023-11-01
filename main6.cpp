@@ -78,6 +78,12 @@ int input2int(string& str) {
 	str.erase(npos + 1);
 
 	int optint;
+	for (int i = 0; i < str.length(); i++)
+	{
+		if (str[i] != '0' && str[i] != '1' && str[i] != '2' && str[i] != '3' && str[i] != '4'
+			&& str[i] != '5' && str[i] != '6' && str[i] != '7' && str[i] != '8' && str[i] != '9')
+			return -1;
+	}
 	try {
 		optint = stoi(str);
 	}
@@ -521,7 +527,7 @@ void totalQuiz() {
 		cout << "수정 메뉴-Q" << endl;
 		getline(cin, userinput);
 		userinput = lowerString(userinput);
-		while (userinput != "Q")
+		while (userinput != "q")
 		{
 			system("cls");
 			cout << "단어가 없습니다. 먼저 단어를 추가하세요." << endl;
@@ -530,6 +536,7 @@ void totalQuiz() {
 			getline(cin, userinput);
 			userinput = lowerString(userinput);
 		}
+		system("cls");
 		return;
 	}
 
@@ -591,6 +598,18 @@ void totalQuiz() {
 		if (userInput == lowerString(wordList[randomIndex].eng)) {
 			cout << "정답!" << endl;
 			right++;
+			cout << "다음문제로 - Q" << endl;
+			getline(cin, userinput);
+			userinput = lowerString(userinput);
+			while (userinput != "q")
+			{
+				system("cls");
+				cout << "정답!" << endl;
+				cout << "다음문제로 - Q" << endl;
+				cout << "Q만 입력해주세요." << endl;
+				getline(cin, userinput);
+				userinput = lowerString(userinput);
+			}
 		}
 		else {
 			cout << "틀렸습니다." << endl;
@@ -645,7 +664,7 @@ void totalQuiz() {
 		cout << "메뉴로 이동-Q" << endl;
 		getline(cin, userinput);
 		userinput = lowerString(userinput);
-		while (userinput != "Q")
+		while (userinput != "q")
 		{
 			system("cls");
 			cout << "메뉴로 이동-Q" << endl;
@@ -653,6 +672,7 @@ void totalQuiz() {
 			getline(cin, userinput);
 			userinput = lowerString(userinput);
 		}
+		system("cls");
 
 	}
 
@@ -675,7 +695,7 @@ void wrongQuiz() {
 		cout << "수정 메뉴-Q" << endl;
 		getline(cin, userinput);
 		userinput = lowerString(userinput);
-		while (userinput != "Q")
+		while (userinput != "q")
 		{
 			system("cls");
 			cout << "현재 오답노트에 단어가 없습니다." << endl;
@@ -787,7 +807,7 @@ void wrongQuiz() {
 		cout << "메뉴로 이동-Q" << endl;
 		getline(cin, userinput);
 		userinput = lowerString(userinput);
-		while (userinput != "Q")
+		while (userinput != "q")
 		{
 			system("cls");
 			cout << "메뉴로 이동-Q" << endl;
@@ -935,6 +955,7 @@ void viewWrong() {
 		else if (menuSelect == 0) {
 			system("cls");
 			mainFirst = 0;
+			viewFirst = 0;
 			return;
 		}
 		else {
