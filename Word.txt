@@ -1,7 +1,4 @@
-together/함께/1
-apple/사과/0
-banana/바나나/1
-stone/돌/1
-set/설정하다/0
-water/물/0
-jump/뛰다/1
+hi/2/1/안녕하세요,반가워요,안녕일,안녕이,안녕삼
+water/2/1/물
+fire/4/3/불
+love/2/1/사랑
