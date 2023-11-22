@@ -240,25 +240,28 @@ vector<wstring> splitTrimWString(const wstring& input, wchar_t delimiter) {
 }
 
 /*
-wordList가 비어있는지 검사하는 함수
-@return wordList가 비어있으면 true, 요소가 한 개 이상이면 false
-
-bool checkWordListEmpty() {
-   if (wordList.empty()) {
-      cout << "단어가 없습니다. 먼저 단어를 추가하세요." << endl;
-      cin.ignore(); // 버퍼 비우기
-      return true;
-   }
-   return false;
-}
+wordVector에서 주어진 eng 영단어에 해당하는 Word객체까지 iterator를 이동시켜주는 함수
+@param wordVector wordList, wrongWordList, wrongWordHistoryList, wrongAccList, wrongAccHistoryList
+@param it vector<Word>에 해당하는 iterator
+@param eng 영단어
+@return 주어진 영단어가 있으면 true, 없으면 false
 */
+bool findInWordList(vector<Word>& wordVector, vector<Word>::iterator& it, const string eng) {
+    for (it = wordVector.begin(); it != wordVector.end(); ++it) {
+        if (it->eng == eng) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 /*
 txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
 @param fileName 읽을 txt파일
 @param wordVector 읽은 string을 Word 객체로 변환 후 저장할 vector
 @param checkDuplicate 같은 영단어가 있는지 체크 여부
-*/
+
 void loadWordsFromFile(const string& fileName, vector<Word>& wordVector, bool checkDuplicate) {
     ifstream file(fileName);
     if (file.is_open()) {
@@ -350,34 +353,300 @@ void loadWordsFromFile(const string& fileName, vector<Word>& wordVector, bool ch
         return;
     }
 }
+*/
+
+/*
+Word.txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
+@param fileName 읽을 txt파일
+*/
+void loadWordsFromWordFile(const string& fileName) {
+    ifstream file(fileName);
+    if (file.is_open()) {
+        wordList.clear(); // 기존 wordList 비우기
+        string line;
+        while (getline(file, line)) {
+            size_t pos = line.find("/");
+
+            if (pos == string::npos)
+            {
+                cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                exit(0);
+            }
+            else {
+                string eng = line.substr(0, pos);
+                if (checkEng(eng) == 0) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                line = line.substr(pos + 1);
+                pos = line.find("/");
+
+                // 음절 읽어오기
+                string s = line.substr(0, pos);
+                int syll = input2int(s);
+                if (syll == -1) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                line = line.substr(pos + 1);
+                pos = line.find("/");
+
+                // 강세 위치 읽어오기
+                string a = line.substr(0, pos);
+                int acc = input2int(a);
+                if (acc == -1) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                // 한글 뜻 읽어오기
+                line = line.substr(pos + 1);
+                pos = line.find(",");
+                string kor[KOR_MAX];
+                int cnt = 0;
+
+                while (pos != string::npos) {
+                    string ko = line.substr(0, pos);
+                    wstring k = s2w(ko);
+                    if (checkKor(k) == 0) {
+                        cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                        exit(0);
+                    }
+                    ko = w2s(k);
+                    kor[cnt] = ko;
+                    cnt++;
+                    line = line.substr(pos + 1);
+                    pos = line.find(",");
+                }
+
+                kor[cnt] = line;
+                cnt++; // 길이 = 마지막 인덱스 + 1
+
+                wordList.push_back(Word(eng, kor, cnt, syll, acc));
+            }
+        }
+        file.close();
+
+        // 겹치는 영어단어가 있는지 체크
+        if (!wordList.empty()) { // wordList가 비어있을 때 무한 루프 해결
+            for (int i = 0; i < wordList.size() - 1; i++) {
+                for (int j = i + 1; j < wordList.size(); j++) {
+                    if (wordList[i].eng == wordList[j].eng) {
+                        cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                        exit(0);
+                    }
+                }
+            }
+        }
+
+    }
+    else {
+        cerr << "Error: " << fileName << "를 불러올 수 없습니다." << endl;
+        return;
+    }
+}
+
+/*
+Wrong.txt 또는 WrongHistory.txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
+@param fileName 읽을 txt파일
+@param wordVector 읽은 string을 Word 객체로 변환 후 저장할 vector - wrongWordList, wrongWordHistoryList
+*/
+void loadWordsFromWrongWordFile(const string& fileName, vector<Word>& wordVector) {
+    ifstream file(fileName);
+    if (file.is_open()) {
+        wordVector.clear(); // 기존 wordVector 비우기
+        string line;
+        while (getline(file, line)) {
+            size_t pos = line.find("/");
+
+            if (pos == string::npos)
+            {
+                cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                exit(0);
+            }
+            else {
+                string eng = line.substr(0, pos);
+                if (checkEng(eng) == 0) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                pos = line.find("/");
+
+                if (pos == string::npos)
+                {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                // 한글 뜻 읽어오기
+                line = line.substr(pos + 1);
+                pos = line.find(",");
+                string kor[KOR_MAX];
+                int cnt = 0;
+
+                while (pos != string::npos) {
+                    string ko = line.substr(0, pos);
+                    wstring k = s2w(ko);
+                    if (checkKor(k) == 0) {
+                        cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                        exit(0);
+                    }
+                    ko = w2s(k);
+                    kor[cnt] = ko;
+                    cnt++;
+                    line = line.substr(pos + 1);
+                    pos = line.find(",");
+                }
+
+                kor[cnt] = line;
+                cnt++; // 길이 = 마지막 인덱스 + 1
+
+                std::vector<Word>::iterator it;
+                if (findInWordList(wordList, it, eng)) {
+                    int syll = it->syll;
+                    int acc = it->acc;
+
+                    wordVector.push_back(Word(eng, kor, cnt, syll, acc));
+                }
+                else {
+                    wordVector.push_back(Word(eng, kor, cnt, -1, -1));
+                }
+            }
+        }
+        file.close();
+
+        // 겹치는 영어단어가 있는지 체크
+        if (!wordVector.empty()) { // wordVector가 비어있을 때 무한 루프 해결
+            for (int i = 0; i < wordVector.size() - 1; i++) {
+                for (int j = i + 1; j < wordVector.size(); j++) {
+                    if (wordVector[i].eng == wordVector[j].eng) {
+                        cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                        exit(0);
+                    }
+                }
+            }
+        }
+
+    }
+    else {
+        cerr << "Error: " << fileName << "를 불러올 수 없습니다." << endl;
+        return;
+    }
+}
+
+/*
+WrongAccent.txt 또는 WrongAccentHistory.txt파일에서 string을 읽어와서 Word 객체로 변환 후 저장
+@param fileName 읽을 txt파일
+@param wordVector 읽은 string을 Word 객체로 변환 후 저장할 vector - wrongAccList, wrongAccHistoryList
+*/
+void loadWordsFromWrongAccentFile(const string& fileName, vector<Word>& wordVector) {
+    ifstream file(fileName);
+    if (file.is_open()) {
+        wordVector.clear(); // 기존 wordVector 비우기
+        string line;
+        while (getline(file, line)) {
+            size_t pos = line.find("/");
+
+            if (pos == string::npos)
+            {
+                cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                exit(0);
+            }
+            else {
+                string eng = line.substr(0, pos);
+                if (checkEng(eng) == 0) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                line = line.substr(pos + 1);
+                pos = line.find("/");
+                if (pos == string::npos)
+                {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                // 음절 읽어오기
+                string s = line.substr(0, pos);
+                int syll = input2int(s);
+                if (syll == -1) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                // 강세 위치 읽어오기
+                string a = line.substr(pos + 1);
+                int acc = input2int(a);
+                if (acc == -1) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
+                std::vector<Word>::iterator it;
+                string tempKor[KOR_MAX];
+                for (int i = 0; i < KOR_MAX; i++) {
+                    tempKor[i] = "";
+                }
+                if (findInWordList(wordList, it, eng)) {
+                    for (int i = 0; i < KOR_MAX; i++) {
+                        tempKor[i] = it->kor[i];
+                    }
+
+                    wordVector.push_back(Word(eng, tempKor, it->cnt, syll, acc));
+                }
+                else {
+                    wordVector.push_back(Word(eng, tempKor, 0, syll, acc));
+                }
+            }
+        }
+        file.close();
+
+        // 겹치는 영어단어가 있는지 체크
+        if (!wordList.empty()) { // wordList가 비어있을 때 무한 루프 해결
+            for (int i = 0; i < wordList.size() - 1; i++) {
+                for (int j = i + 1; j < wordList.size(); j++) {
+                    if (wordList[i].eng == wordList[j].eng) {
+                        cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                        exit(0);
+                    }
+                }
+            }
+        }
+
+    }
+    else {
+        cerr << "Error: " << fileName << "를 불러올 수 없습니다." << endl;
+        return;
+    }
+}
 
 /*
 Word.txt, Wrong.txt, WrongHistory.txt를 모두 불러오는 함수
 */
 void loadWordsFromFiles() {
-    loadWordsFromFile("Word.txt", wordList, true);
-    loadWordsFromFile("Wrong.txt", wrongWordList, false);
-    loadWordsFromFile("WrongHistory.txt", wrongWordHistoryList, false);
-    loadWordsFromFile("WrongAccent.txt", wrongAccList, true);
-    loadWordsFromFile("WrongAccentHistory.txt", wrongAccHistoryList, true);
+    loadWordsFromWordFile("Word.txt");
+    // Word.txt를 먼저 불러와야 아래 파일들을 불러오기 가능
+    loadWordsFromWrongWordFile("Wrong.txt", wrongWordList);
+    loadWordsFromWrongWordFile("WrongHistory.txt", wrongWordHistoryList);
+    loadWordsFromWrongAccentFile("WrongAccent.txt", wrongAccList);
+    loadWordsFromWrongAccentFile("WrongAccentHistory.txt", wrongAccHistoryList);
 }
 
 /*
 전체 단어 퀴즈에서 문제를 틀린 경우 해당 단어를 wrongWordList, wrongWordHistoryList에 추가하는 함수
-영단어가 같은 단어가 있을 경우, 그 단어의 한글 뜻을 주어진 kor로 바꿈 - 일단 이 기능은 없앰(요구분석 필요)
 @param wrongWord 틀린 단어
 */
 void pushWrongQuizWord(QuizWord wrongWord) {
     bool exist = false;
-    auto it = wrongWordList.begin();
-
+    vector<Word>::iterator it;
+    
     // 같은 영단어가 wrongWordList에 존재하는지 검사
-    for (it = wrongWordList.begin(); it != wrongWordList.end(); ++it) {
-        if (it->eng == wrongWord.eng) {
-            exist = true;
-            break;
-        }
-    }
+    if (findInWordList(wrongWordList, it, wrongWord.eng))
+        exist = true;
 
     if (!exist) { // 영단어가 존재하지 않으면 오답노트에 추가
         string kor[KOR_MAX];
@@ -399,21 +668,17 @@ void pushWrongQuizWord(QuizWord wrongWord) {
     }
     exist = false;
 
-    // 영어와 한글 뜻이 같은 영단어가 wrongWordHistoryList에 존재하는지 검사
-    for (it = wrongWordHistoryList.begin(); it != wrongWordHistoryList.end(); ++it) {
-        if (it->eng == wrongWord.eng) {
-            exist = true;
-            break;
-        }
-    }
+    // 같은 영단어가 wrongWordHistoryList에 존재하는지 검사
+    if (findInWordList(wrongWordHistoryList, it, wrongWord.eng))
+        exist = true;
 
     if (!exist) { // 영단어가 존재하지 않으면 오답노트에 추가
         string kor[KOR_MAX];
         kor[0] = wrongWord.kor;
         wrongWordHistoryList.push_back(Word(wrongWord.eng, kor, 1, wrongWord.syll, wrongWord.acc));
     }
-    else { // 영단어가 존재할 때, 해당 한글 뜻이 없으면 추가bool e = false; // 체크용
-        bool e = false;
+    else { // 영단어가 존재할 때, 해당 한글 뜻이 없으면 추가
+        bool e = false; // 체크용
         for (int i = 0; i < it->cnt; i++) {
             if (it->kor[i] == wrongWord.kor) {
                 e = true;
@@ -429,66 +694,33 @@ void pushWrongQuizWord(QuizWord wrongWord) {
 
 /*
 전체 강세 퀴즈에서 문제를 틀린 경우 해당 단어를 wrongAccList, wrongAccHistoryList에 추가하는 함수
-영단어가 같은 단어가 있을 경우, 그 단어의 한글 뜻을 주어진 kor로 바꿈
 @param wrongWord 틀린 단어
 */
-void pushWrongAccentQuizWord(QuizWord wrongWord) {
+void pushWrongAccentQuizWord(Word wrongWord) {
     bool exist = false;
-    auto it = wrongAccList.begin();
+    vector<Word>::iterator it;
 
     // 같은 영단어가 wrongWordList에 존재하는지 검사
-    for (it = wrongAccList.begin(); it != wrongAccList.end(); ++it) {
-        if (it->eng == wrongWord.eng) {
-            exist = true;
-            break;
-        }
-    }
+    if (findInWordList(wrongAccList, it, wrongWord.eng))
+        exist = true;
 
     if (!exist) { // 영단어가 존재하지 않으면 오답노트에 추가
         string kor[KOR_MAX];
-        kor[0] = wrongWord.kor;
-        wrongAccList.push_back(Word(wrongWord.eng, kor, 1, wrongWord.syll, wrongWord.acc));
-    }
-    else { // 영단어가 존재할 때, 해당 한글 뜻이 없으면 추가
-        bool e = false; // 체크용
-        for (int i = 0; i < it->cnt; i++) {
-            if (it->kor[i] == wrongWord.kor) {
-                e = true;
-                break;
-            }
-        }
-        if (!e) {
-            it->kor[it->cnt] = wrongWord.kor;
-            it->cnt++;
-        }
+        for (int i = 0; i < KOR_MAX; i++)
+            kor[i] = "";
+        wrongAccList.push_back(Word(wrongWord.eng, kor, 0, wrongWord.syll, wrongWord.acc));
     }
     exist = false;
 
-    // 영어와 한글 뜻이 같은 영단어가 wrongWordHistoryList에 존재하는지 검사
-    for (it = wrongAccHistoryList.begin(); it != wrongAccHistoryList.end(); ++it) {
-        if (it->eng == wrongWord.eng) {
-            exist = true;
-            break;
-        }
-    }
+    // 같은 영단어가 wrongWordHistoryList에 존재하는지 검사
+    if (findInWordList(wrongAccHistoryList, it, wrongWord.eng))
+        exist = true;
 
     if (!exist) { // 영단어가 존재하지 않으면 오답노트에 추가
         string kor[KOR_MAX];
-        kor[0] = wrongWord.kor;
-        wrongAccHistoryList.push_back(Word(wrongWord.eng, kor, 1, wrongWord.syll, wrongWord.acc));
-    }
-    else { // 영단어가 존재할 때, 해당 한글 뜻이 없으면 추가bool e = false; // 체크용
-        bool e = false;
-        for (int i = 0; i < it->cnt; i++) {
-            if (it->kor[i] == wrongWord.kor) {
-                e = true;
-                break;
-            }
-        }
-        if (!e) {
-            it->kor[it->cnt] = wrongWord.kor;
-            it->cnt++;
-        }
+        for (int i = 0; i < KOR_MAX; i++)
+            kor[i] = "";
+        wrongAccHistoryList.push_back(Word(wrongWord.eng, kor, 0, wrongWord.syll, wrongWord.acc));
     }
 }
 
@@ -497,18 +729,32 @@ void pushWrongAccentQuizWord(QuizWord wrongWord) {
 현재 프로그램 내의 Word 객체들을 호출된 시점 기준으로 txt파일에 저장하는 함수
 @param fileName 저장할 txt파일
 @param wordVector 저장할 Word 객체가 담긴 vector
+@param type wordVector의 타입 - 0이면 wordList, 1이면 wrongWordList 또는 wrongWordHistoryList, 2이면 wrongAccList 또는 wrongAccHistoryList
 */
-void saveWordsToFile(const string& fileName, vector<Word>& wordVector) {
+void saveWordsToFile(const string& fileName, vector<Word>& wordVector, int type) {
     ofstream file(fileName);
     if (file.is_open()) {
         for (const Word& word : wordVector) {
-            //file << word.eng << "/" << word.kor << "/" << word.bookmarked << endl;
-            file << word.eng << "/" << word.syll << "/" << word.acc << "/";
-            for (int i = 0; i < word.cnt; i++) {
-                file << word.kor[i];
-                if (i != word.cnt - 1) {
-                    file << ",";
+            file << word.eng << "/";
+            if (type == 0) { // Word.txt 저장 형식
+                file << word.syll << "/" << word.acc << "/";
+                for (int i = 0; i < word.cnt; i++) {
+                    file << word.kor[i];
+                    if (i != word.cnt - 1) {
+                        file << ",";
+                    }
                 }
+            }
+            else if (type == 1) { // Wrong.txt, WrongHistory.txt 저장 형식
+                for (int i = 0; i < word.cnt; i++) {
+                    file << word.kor[i];
+                    if (i != word.cnt - 1) {
+                        file << ",";
+                    }
+                }
+            }
+            else if (type == 2) { // WrongAccent.txt, WrongAccentHistory.txt 저장 형식
+                file << word.syll << "/" << word.acc;
             }
             file << endl;
         }
@@ -523,12 +769,13 @@ void saveWordsToFile(const string& fileName, vector<Word>& wordVector) {
 Word.txt, Wrong.txt, WrongHistory.txt를 모두 저장하는 함수
 */
 void saveWordsToFiles() {
-    saveWordsToFile("Word.txt", wordList);
-    saveWordsToFile("Wrong.txt", wrongWordList);
-    saveWordsToFile("WrongHistory.txt", wrongWordHistoryList);
-    saveWordsToFile("WrongAccent.txt", wrongAccList);
-    saveWordsToFile("WrongAccentHistory.txt", wrongAccHistoryList);
+    saveWordsToFile("Word.txt", wordList, 0);
+    saveWordsToFile("Wrong.txt", wrongWordList, 1);
+    saveWordsToFile("WrongHistory.txt", wrongWordHistoryList, 1);
+    saveWordsToFile("WrongAccent.txt", wrongAccList, 2);
+    saveWordsToFile("WrongAccentHistory.txt", wrongAccHistoryList, 2);
 }
+
 
 int mainFirst = 0; // main메뉴 상태 초기값
 int viewFirst = 0; // 
@@ -578,6 +825,86 @@ int main() {
     return 0;
 }
 
+
+/*
+edit()안에서 영단어의 한글 뜻, 음절 수, 강세 위치 수정 시 오답 정보에 대해 처리하는 함수
+@param wordVector wrongWordList, wrongWordHistory, wrongAccList, wrongAccHistoryList
+@param editedWord edit()안에서 수정된 Word
+@param acc 일반 오답이면 false, 강세 오답이면 true
+*/
+void editWrongList(vector<Word>& wordVector, const Word& editedWord, bool acc) {
+    if (acc) { // 강세 오답일 경우
+        // 오답노트에 수정한 단어가 존재한다면
+        vector<Word>::iterator wordIt;
+        if (findInWordList(wordVector, wordIt, editedWord.eng)) {
+            string tempKor[KOR_MAX];
+            for (int i = 0; i < KOR_MAX; i++)
+                tempKor[i] = "";
+            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
+            int tempKorIndex = 0;
+            for (int i = 0; i < KOR_MAX; i++) {
+                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
+                bool exist = false;
+                for (int j = 0; j < KOR_MAX; j++) {
+                    if (wordIt->kor[i] == editedWord.kor[j] && wordIt->kor[i] != "") {
+                        exist = true;
+                        break;
+                    }
+                }
+                if (exist)
+                    tempKor[tempKorIndex++] = wordIt->kor[i];
+            }
+
+            for (int i = 0; i < KOR_MAX; i++)
+                wordIt->kor[i] = tempKor[i];
+
+            wordIt->cnt = tempKorIndex;
+            // 음절 및 강세 위치도 반영
+            wordIt->syll = editedWord.syll;
+            wordIt->acc = editedWord.acc;
+        }
+    }
+    else { // 일반 오답일 경우
+        // 오답노트에 수정한 단어가 존재한다면
+        vector<Word>::iterator wordIt;
+        if (findInWordList(wordVector, wordIt, editedWord.eng)) {
+            string tempKor[KOR_MAX];
+            for (int i = 0; i < KOR_MAX; i++)
+                tempKor[i] = "";
+            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
+            int tempKorIndex = 0;
+            for (int i = 0; i < KOR_MAX; i++) {
+                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
+                bool exist = false;
+                for (int j = 0; j < KOR_MAX; j++) {
+                    if (wordIt->kor[i] == editedWord.kor[j] && wordIt->kor[i] != "") {
+                        exist = true;
+                        break;
+                    }
+                }
+                if (exist)
+                    tempKor[tempKorIndex++] = wordIt->kor[i];
+            }
+
+            if (tempKor[0] == "") { // 한글 뜻이 하나도 남아있지 않으면 단어 제거 (기록 파일 포함)
+                string tempEng = wordIt->eng;
+                auto removeIt = remove_if(wordVector.begin(), wordVector.end(),
+                    [tempEng](const Word& word) { return (word.eng == tempEng); });
+                wordVector.erase(removeIt, wordVector.end());
+            }
+            else {
+                for (int i = 0; i < KOR_MAX; i++)
+                    wordIt->kor[i] = tempKor[i];
+
+                wordIt->cnt = tempKorIndex;
+                // 음절 및 강세 위치도 반영
+                wordIt->syll = editedWord.syll;
+                wordIt->acc = editedWord.acc;
+            }
+        }
+    }
+    
+}
 
 
 /*
@@ -693,6 +1020,9 @@ void edit() {
                         if (syll <= 0) {
                             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
                         }
+                        else if (syll > 30) {
+                            cout << "음절 수는 30보다 클 수 없습니다. 다시 입력해주세요." << endl;
+                        }
                         else {
                             checkedSyll = true;
                             break;
@@ -710,6 +1040,9 @@ void edit() {
 
                         if (acc <= 0) {
                             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
+                        }
+                        else if (acc > syll) {
+                            cout << "강세 위치는 음절 수보다 클 수 없습니다. 다시 입력해주세요." << endl;
                         }
                         else {
                             checkedAcc = true;
@@ -762,8 +1095,8 @@ void edit() {
                 if (choice == "d") {
 
                     string tmpKor[KOR_MAX];
-                    int size = sizeof(it->kor) / sizeof(it->kor[0]);
-                    copy(it->kor, it->kor + size, tmpKor);
+                    for (int i = 0; i < KOR_MAX; i++)
+                        tmpKor[i] = it->kor[i];
                     int tmpCnt = it->cnt;
                     int tmpSyll = it->syll;
                     int tmpAcc = it->acc;
@@ -851,6 +1184,9 @@ void edit() {
                         if (syll <= 0) {
                             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
                         }
+                        else if (syll > 30) {
+                            cout << "음절 수는 30보다 클 수 없습니다. 다시 입력해주세요." << endl;
+                        }
                         else {
                             checkedSyll = true;
                             break;
@@ -869,6 +1205,9 @@ void edit() {
                         if (acc <= 0) {
                             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
                         }
+                        else if (acc > syll) {
+                            cout << "강세 위치는 음절 수보다 클 수 없습니다. 다시 입력해주세요." << endl;
+                        }
                         else {
                             checkedAcc = true;
                             break;
@@ -876,148 +1215,21 @@ void edit() {
                     }
 
                     // 실제 수정
-                    int size = sizeof(korArr) / sizeof(korArr[0]);
-                    copy(korArr, korArr + size, it->kor);
+                    for (int i = 0; i < KOR_MAX; i++) {
+                        it->kor[i] = korArr[i];
+                    }
                     it->cnt = korVector.size();
                     it->syll = syll;
                     it->acc = acc;
 
                     // 오답노트에서 수정
-                    // 오답노트에 수정한 단어가 존재한다면
-                    bool e = false;
-                    auto wwL = wrongWordList.begin();
-                    for (wwL; wwL != wrongWordList.end(); ++wwL) {
-                        if (wwL->eng == s) {
-                            vector<string>wwLKor;
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                wwLKor.push_back(wwL->kor[i]);
-                            }
-                            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
-                                for (int j = 0; j < it->cnt; j++) {
-                                    if (wwLKor[i] == it->kor[j]) {
-                                        e = true;
-                                        break;
-                                    }                                    
-                                }
-                                if (!e) {
-                                    wwLKor.erase(wwLKor.begin() + i);
-                                    i--;
-                                    wwL->cnt--;
-                                }
-                                e = false;
-                            }
-                            for (int i = 0; i < wwLKor.size(); i++) {
-                                wwL->kor[i] = wwLKor[i];
-                            }
-                            // 음절 및 강세 위치도 반영
-                            wwL->syll = it->syll;
-                            wwL->acc = it->acc;
-                        }
-                    }
-
-                    // 오답기록에서 수정
-                    // 오답기록에 수정한 단어가 존재한다면
-                    wwL = wrongWordHistoryList.begin();
-                    for (wwL; wwL != wrongWordHistoryList.end(); ++wwL) {
-                        if (wwL->eng == s) {
-                            vector<string>wwLKor;
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                wwLKor.push_back(wwL->kor[i]);
-                            }
-                            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
-                                for (int j = 0; j < it->cnt; j++) {
-                                    if (wwLKor[i] == it->kor[j]) {
-                                        e = true;
-                                        break;
-                                    }
-                                }
-                                if (!e) {
-                                    wwLKor.erase(wwLKor.begin() + i);
-                                    i--;
-                                    wwL->cnt--;
-                                }
-                                e = false;
-                            }
-                            for (int i = 0; i < wwLKor.size(); i++) {
-                                wwL->kor[i] = wwLKor[i];
-                            }
-                            // 음절 및 강세 위치도 반영
-                            wwL->syll = it->syll;
-                            wwL->acc = it->acc;
-                        }
-                    }
-
-                    // 강세오답에서 수정
-                    // 강세오답에 수정한 단어가 존재한다면
-                    wwL = wrongAccList.begin();
-                    for (wwL; wwL != wrongAccList.end(); ++wwL) {
-                        if (wwL->eng == s) {
-                            vector<string>wwLKor;
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                wwLKor.push_back(wwL->kor[i]);
-                            }
-                            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
-                                for (int j = 0; j < it->cnt; j++) {
-                                    if (wwLKor[i] == it->kor[j]) {
-                                        e = true;
-                                        break;
-                                    }
-                                }
-                                if (!e) {
-                                    wwLKor.erase(wwLKor.begin() + i);
-                                    i--;
-                                    wwL->cnt--;
-                                }
-                                e = false;
-                            }
-                            for (int i = 0; i < wwLKor.size(); i++) {
-                                wwL->kor[i] = wwLKor[i];
-                            }
-                            // 음절 및 강세 위치도 반영
-                            wwL->syll = it->syll;
-                            wwL->acc = it->acc;
-                        }
-                    }
-
-                    // 강세기록에서 수정
-                    // 강세기록에서 수정한 단어가 존재한다면
-                    wwL = wrongAccHistoryList.begin();
-                    for (wwL; wwL != wrongAccHistoryList.end(); ++wwL) {
-                        if (wwL->eng == s) {
-                            vector<string>wwLKor;
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                wwLKor.push_back(wwL->kor[i]);
-                            }
-                            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
-                            for (int i = 0; i < wwL->cnt; i++) {
-                                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
-                                for (int j = 0; j < it->cnt; j++) {
-                                    if (wwLKor[i] == it->kor[j]) {
-                                        e = true;
-                                        break;
-                                    }
-                                }
-                                if (!e) {
-                                    wwLKor.erase(wwLKor.begin() + i);
-                                    i--;
-                                    wwL->cnt--;
-                                }
-                                e = false;
-                            }
-                            for (int i = 0; i < wwLKor.size(); i++) {
-                                wwL->kor[i] = wwLKor[i];
-                            }
-                            // 음절 및 강세 위치도 반영
-                            wwL->syll = it->syll;
-                            wwL->acc = it->acc;
-                        }
-                    }
+                    editWrongList(wrongWordList, *it, false); 
+                    // 오답 기록에서 수정
+                    editWrongList(wrongWordHistoryList, *it, false);
+                    // 강세 오답에서 수정
+                    editWrongList(wrongAccList, *it, true);
+                    // 강세 오답 기록에서 수정
+                    editWrongList(wrongAccHistoryList, *it, true);
 
                     saveWordsToFiles();
 
@@ -1169,19 +1381,6 @@ void totalQuiz() {
             wrong++;
             cout << "틀린 단어의 정답: " << randomQuizWord.eng << endl;
 
-            // 필요 없음
-            /*// 오답노트에 추가 여부를 알기 위해 해당 영단어를 wrongWordList에서 찾음
-            bool exist = false;
-            auto it = wrongWordList.begin();
-
-            // 영단어가 wrongWordList에 존재하는지 검사
-            for (it = wrongWordList.begin(); it != wrongWordList.end(); ++it) {
-                if (it->eng == wordList[randomIndex].eng) {
-                    exist = true;
-                    break;
-                }
-            }*/
-
             cout << "해당 단어를 오답노트에 추가 하시겠습니까? (Y/N)" << endl;
             string choice;
             while (true) {
@@ -1189,6 +1388,7 @@ void totalQuiz() {
                 choice = lowerString(choice);
                 if (choice == "y") {
                     pushWrongQuizWord(randomQuizWord); // 오답 노트에 추가 (+ 뜻 덮어쓰기)
+                    saveWordsToFiles();   // 즉시 txt 수정
                     break;
                 }
                 else if (choice == "n") {
@@ -1198,7 +1398,6 @@ void totalQuiz() {
                     cout << "다시 입력해주세요." << endl;
                 }
             }
-
 
             cout << "다음 문제로 - Q" << endl;
             getline(cin, userinput);
@@ -1214,7 +1413,6 @@ void totalQuiz() {
                 getline(cin, userinput);
                 userinput = lowerString(userinput);
             }
-            saveWordsToFiles();   // 즉시 txt 수정
         }
     }
     if (!qCheck) {
@@ -1276,6 +1474,26 @@ void wrongQuiz() {
         return;
     }
 
+    vector<QuizWord> quizWordVector;
+
+    // 각 영단어와 그 단어의 여러 한글 뜻을 분리해서 추가
+    for (int i = 0; i < wrongWordList.size(); i++) {
+        Word tempWord = wrongWordList[i];
+        vector<Word>::iterator wordIt;
+        int tempSyll = -1;
+        int tempAcc = -1;
+        if (findInWordList(wordList, wordIt, tempWord.eng)) { // Word.txt에 영단어가 있으면 음절 수, 강세 위치 출력
+            tempSyll = wordIt->syll;
+            tempAcc = wordIt->acc;
+        }
+        for (int j = 0; j < tempWord.cnt; j++) {
+            if (tempWord.kor[j].length() > 0) {
+                quizWordVector.push_back(QuizWord(tempWord.eng, tempWord.kor[j], tempSyll, tempAcc));
+            }
+                
+        }
+    }
+
     while (true) {
         cout << "퀴즈 문제 수를 입력하세요: ";
         qCheck = false;
@@ -1290,21 +1508,15 @@ void wrongQuiz() {
             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
         }
 
-        else if (goalCount <= wrongWordList.size())
+        else if (goalCount <= quizWordVector.size())
             break;
         else
         {
             system("cls");
-            cout << "오답노트에 있는 단어 수 (" << wrongWordList.size() << ") 보다 퀴즈 문제 수가 더 많습니다. 다시 입력해주세요." << endl;
+            cout << "가능한 문제 수 (" << quizWordVector.size() << ") 보다 퀴즈 문제 수가 더 많습니다. 다시 입력해주세요." << endl;
         }
     }
 
-    vector<QuizWord> quizWordVector;
-
-    for (int i = 0; i < wrongWordList.size(); i++) {
-        Word tempWord = wrongWordList[i];
-        quizWordVector.push_back(QuizWord(tempWord.eng, tempWord.kor[0], tempWord.syll, tempWord.acc));
-    }
 
     // quizWordVector를 섞어서 단어가 랜덤한 순서로 등장하게 만들기
     random_device rd;
@@ -1318,8 +1530,15 @@ void wrongQuiz() {
         QuizWord randomQuizWord = quizWordVector[i];
         cout << "문제 " << (i + 1) << "." << endl;
         cout << "한글 뜻: " << randomQuizWord.kor << endl;
-        cout << "음절 수: " << randomQuizWord.syll << endl;
-        cout << "강세 위치: " << randomQuizWord.acc << endl;
+        // Word.txt에 영단어가 있는가에 따라 음절 수와 강세 위치 출력이 달라짐
+        if(randomQuizWord.syll < 0)
+            cout << "음절 수: " << "?" << endl;
+        else
+            cout << "음절 수: " << randomQuizWord.syll << endl;
+        if(randomQuizWord.acc < 0)
+            cout << "강세 위치: " << "?" << endl;
+        else
+            cout << "강세 위치: " << randomQuizWord.acc << endl;
         cout << "영어 단어를 입력하세요 (메뉴로 돌아가려면 'Q' 입력): ";
 
         string userInput;
@@ -1347,10 +1566,37 @@ void wrongQuiz() {
                 if (choice == "y") {
                     string removeEng = randomQuizWord.eng;
                     string removeKor = randomQuizWord.kor;
-                    auto removeIt = remove_if(wrongWordList.begin(), wrongWordList.end(),
-                        [removeEng, removeKor](const Word& word) { return (word.eng == removeEng && word.kor[0] == removeKor); });
 
-                    wrongWordList.erase(removeIt, wrongWordList.end()); // 오답 노트에서 삭제
+                    vector<Word>::iterator wordIt;
+                    if (findInWordList(wrongWordList, wordIt, removeEng)) {
+                        string korArr[KOR_MAX];
+                        int korArrIndex = 0;
+
+                        for (int i = 0; i < KOR_MAX; i++)
+                            korArr[i] = "";
+                        for (int i = 0; i < KOR_MAX; i++) {
+                            if (wordIt->kor[i] != removeKor && wordIt->kor[i] != "") { // 제거할 한글 뜻을 제외하고 나머지 한글 뜻을 korArr에 추가
+                                korArr[korArrIndex++] = wordIt->kor[i];
+                            }
+                        }
+                        bool exist = false; // 오답 영단어에 한글 뜻이 한 개 이상 존재
+                        for (int i = 0; i < KOR_MAX; i++) {
+                            if (korArr[i] != "") {
+                                exist = true;
+                            }
+                        }
+                        if (!exist) { // 오답 영단어에 한글 뜻이 더 이상 없으면 오답노트에서 삭제
+                            auto removeIt = remove_if(wrongWordList.begin(), wrongWordList.end(),
+                                [removeEng](const Word& word) { return (word.eng == removeEng); });
+                            wrongWordList.erase(removeIt, wrongWordList.end());
+                        }
+                        else { // 오답 영단어의 맞춘 한글 뜻 제거
+                            for (int i = 0; i < KOR_MAX; i++) {
+                                wordIt->kor[i] = korArr[i];
+                            }
+                            wordIt->cnt = korArrIndex;
+                        }
+                    }
 
                     saveWordsToFiles();                       // Word 객체 변환 후 즉시 txt 수정
                     break;
@@ -1443,14 +1689,15 @@ void totalAccentQuiz() {
         return;
     }
 
-    vector<QuizWord> quizWordVector;
+    vector<Word> quizWordVector;
 
     // 각 영단어와 그 단어의 여러 한글 뜻을 분리해서 추가
     for (int i = 0; i < wordList.size(); i++) {
         Word tempWord = wordList[i];
-        for (int j = 0; j < tempWord.cnt; j++) {
-            quizWordVector.push_back(QuizWord(tempWord.eng, tempWord.kor[j], tempWord.syll, tempWord.acc));
-        }
+        string tempKor[KOR_MAX];
+        for (int i = 0; i < KOR_MAX; i++)
+            tempKor[i] = tempWord.kor[i];
+        quizWordVector.push_back(Word(tempWord.eng, tempKor, tempWord.cnt, tempWord.syll, tempWord.acc));
     }
 
     while (true) {
@@ -1477,9 +1724,7 @@ void totalAccentQuiz() {
         }
     }
 
-
-
-    // quizIndexVector를 섞어서 인덱스가 랜덤한 순서로 등장하게 만들기
+    // quizWordVector를 섞어서 인덱스가 랜덤한 순서로 등장하게 만들기
     random_device rd;
     mt19937 g(rd()); // Mersenne Twister pseudo - random generator
     shuffle(quizWordVector.begin(), quizWordVector.end(), g);
@@ -1487,16 +1732,18 @@ void totalAccentQuiz() {
     for (int i = 0; i < goalCount; i++) {
         system("cls"); // 화면 지우기 (Windows)
 
-        QuizWord randomQuizWord = quizWordVector[i];
+        Word randomWord = quizWordVector[i];
         cout << "문제 " << (i + 1) << "." << endl;
-        cout << "영단어: " << randomQuizWord.eng << endl;
-        cout << "한글 뜻: " << randomQuizWord.kor << endl;
-        cout << "음절 수: " << randomQuizWord.syll << endl;
+        cout << "영단어: " << randomWord.eng << endl;
+        cout << "한글 뜻: ";
+        printStringArray(randomWord.kor, randomWord.cnt, false);
+        cout << endl;
+        cout << "음절 수: " << randomWord.syll << endl;
         cout << "강세 위치를 입력하세요 (메뉴로 돌아가려면 'Q' 입력): ";
         string userInput;
         int userInputInt = 0;
 
-        while (!qCheck && userInputInt <= 0) {
+        while (!qCheck && (userInputInt <= 0 || userInputInt > randomWord.syll)) {
             getline(cin, userInput);
             userInput = lowerString(userInput);
             if (userInput == "q") {
@@ -1506,13 +1753,13 @@ void totalAccentQuiz() {
             }
 
             userInputInt = input2int(userInput);
-            if (userInputInt <= 0)
+            if (userInputInt <= 0 || userInputInt > randomWord.syll)
                 cout << "규칙에 위배되는 입력입니다. 다시 입력해주세요 : ";
         }
 
         if (qCheck) break;
 
-        if (userInputInt == randomQuizWord.acc) {
+        if (userInputInt == randomWord.acc) {
             cout << "정답!" << endl;
             right++;
             cout << "다음문제로 - Q" << endl;
@@ -1531,7 +1778,7 @@ void totalAccentQuiz() {
         else {
             cout << "틀렸습니다." << endl;
             wrong++;
-            cout << "틀린 단어의 강세 위치 정답: " << randomQuizWord.acc << endl;
+            cout << "틀린 단어의 강세 위치 정답: " << randomWord.acc << endl;
 
             cout << "해당 단어를 오답노트에 추가 하시겠습니까? (Y/N)" << endl;
             string choice;
@@ -1539,7 +1786,7 @@ void totalAccentQuiz() {
                 getline(cin, choice);
                 choice = lowerString(choice);
                 if (choice == "y") {
-                    pushWrongAccentQuizWord(randomQuizWord); // 오답 노트에 추가 (+ 뜻 덮어쓰기)
+                    pushWrongAccentQuizWord(randomWord); // 오답 노트에 추가 (+ 뜻 덮어쓰기)
                     saveWordsToFiles();   // 즉시 txt 수정
                     break;
                 }
@@ -1551,7 +1798,6 @@ void totalAccentQuiz() {
                 }
             }
 
-
             cout << "다음 문제로 - Q" << endl;
             getline(cin, userinput);
             userinput = lowerString(userinput);
@@ -1559,14 +1805,13 @@ void totalAccentQuiz() {
             {
                 system("cls");
                 cout << "틀렸습니다." << endl;
-                cout << "틀린 단어의 강세 위치 정답: " << randomQuizWord.acc << endl;
+                cout << "틀린 단어의 강세 위치 정답: " << randomWord.acc << endl;
                 cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
                 cout << "다음 문제로 - Q" << endl;
                 cout << "Q만 입력해주세요." << endl;
                 getline(cin, userinput);
                 userinput = lowerString(userinput);
             }
-            saveWordsToFiles();   // 즉시 txt 수정
         }
     }
     if (!qCheck) {
@@ -1653,32 +1898,42 @@ void wrongAccentQuiz() {
         }
     }
 
-    vector<int> quizIndexVector;
+    vector<Word> quizWordVector;
 
-    // 각 영단어를 추가
+    // 각 영단어와 그 단어의 여러 한글 뜻을 분리해서 추가
     for (int i = 0; i < wrongAccList.size(); i++) {
-        quizIndexVector.push_back(i);
+        Word tempWord = wrongAccList[i];
+        string tempKor[KOR_MAX];
+        for (int i = 0; i < KOR_MAX; i++)
+            tempKor[i] = tempWord.kor[i];
+        quizWordVector.push_back(Word(tempWord.eng, tempKor, tempWord.cnt, tempWord.syll, tempWord.acc));
     }
 
-    // quizIndexVector를 섞어서 인덱스가 랜덤한 순서로 등장하게 만들기
+    // quizWordVector를 섞어서 인덱스가 랜덤한 순서로 등장하게 만들기
     random_device rd;
     mt19937 g(rd()); // Mersenne Twister pseudo - random generator
-    shuffle(quizIndexVector.begin(), quizIndexVector.end(), g);
+    shuffle(quizWordVector.begin(), quizWordVector.end(), g);
 
     for (int i = 0; i < goalCount; i++) {
         system("cls"); // 화면 지우기 (Windows)
 
-        Word randomWord = wordList[quizIndexVector[i]];
+        Word randomWord = quizWordVector[i];
         cout << "문제 " << (i + 1) << "." << endl;
         cout << "영단어: " << randomWord.eng << endl;
+        // Word.txt에 영단어가 있는가에 따라 한글 뜻 출력이 달라짐
+        vector<Word>::iterator wordIt;
         cout << "한글 뜻: ";
-        printStringArray(randomWord.kor, randomWord.cnt, true);
+        if (findInWordList(wordList, wordIt, randomWord.eng))
+            printStringArray(wordIt->kor, wordIt->cnt, false);
+        else
+            cout << "?";
+        cout << endl;
         cout << "음절 수: " << randomWord.syll << endl;
         cout << "강세 위치를 입력하세요 (메뉴로 돌아가려면 'Q' 입력): ";
         string userInput;
         int userInputInt = 0;
 
-        while (!qCheck && userInputInt <= 0) {
+        while (!qCheck && (userInputInt <= 0 || userInputInt > randomWord.syll)) {
             getline(cin, userInput);
             userInput = lowerString(userInput);
             if (userInput == "q") {
@@ -1688,7 +1943,7 @@ void wrongAccentQuiz() {
             }
 
             userInputInt = input2int(userInput);
-            if (userInputInt <= 0)
+            if (userInputInt <= 0 || userInputInt > randomWord.syll)
                 cout << "규칙에 위배되는 입력입니다. 다시 입력해주세요 : ";
         }
 
@@ -1820,25 +2075,58 @@ void quiz() {
     }
 }
 
+
 /*
-오답노트 조회 함수 viewWrongWordList()
-@param wrongWordList wrongWordList 또는 wrongAccList
+오답노트 조회 함수 viewWrongList()
+@param wrongList wrongWordList, wrongWordHistoryList, wrongAccList, wrongAccHistoryList
+@param isHistory 오답노트면 false, 오답노트 기록이면 true
+@param isAcc 일반 오답이면 false, 강세 오답이면 true
 */
-void viewWrongWordList(const vector<Word>& wrongWordList) {
+void viewWrongList(const vector<Word>& wrongList, bool isHistory, bool isAcc) {
     system("cls");
-    auto it = wrongWordList.begin();
+    auto it = wrongList.begin();
     string userinput;
 
-    if (wrongWordList.empty()) {
-        cout << "현재 오답노트에 단어가 없습니다." << endl;
+    if (wrongList.empty()) {
+        if (isHistory)
+            cout << "현재 한 번이라도 오답노트에 들어갔던 단어가 없습니다." << endl;
+        else
+            cout << "현재 오답노트에 단어가 없습니다." << endl;
     }
     else {
         // 단어 모두 출력
         cout << "[영단어 - 한글 뜻 - 음절 수 - 강세 위치]" << endl;
-        for (it = wrongWordList.begin(); it != wrongWordList.end(); ++it) {
-            cout << "[" << it->eng << " - ";
-            printStringArray(it->kor, it->cnt, false);
-            cout << " - " << it->syll << " - " << it->acc << "]" << endl;
+        if (isAcc) { // 강세 오답노트
+            for (it = wrongList.begin(); it != wrongList.end(); ++it) {
+                vector<Word>::iterator wordIt;
+                if (findInWordList(wordList, wordIt, it->eng)) { // Word.txt에 영단어가 있는 경우, 그 파일에서 가져와서 한글 뜻 출력
+                    cout << "[" << it->eng << " - ";
+                    printStringArray(wordIt->kor, wordIt->cnt, false);
+                    cout << " - " << it->syll << " - " << it->acc << "]" << endl;
+                }
+                else { // Word.txt에 영단어가 없는 경우, 한글 뜻은 ?로 출력
+                    cout << "[" << it->eng << " - ";
+                    cout << "?";
+                    cout << " - " << it->syll << " - " << it->acc << "]" << endl;
+                }
+
+            }
+        }
+        else { // 일반 오답노트
+            for (it = wrongList.begin(); it != wrongList.end(); ++it) {
+                vector<Word>::iterator wordIt;
+                if (findInWordList(wordList, wordIt, it->eng)) { // Word.txt에 영단어가 있는 경우, 그 파일에서 가져와서 음절 수, 강세 위치 출력
+                    cout << "[" << it->eng << " - ";
+                    printStringArray(it->kor, it->cnt, false);
+                    cout << " - " << wordIt->syll << " - " << wordIt->acc << "]" << endl;
+                }
+                else { // Word.txt에 영단어가 없는 경우, 음절 수와 강세 위치는 ?로 출력
+                    cout << "[" << it->eng << " - ";
+                    printStringArray(it->kor, it->cnt, false);
+                    cout << " - " << "?" << " - " << "?" << "]" << endl;
+                }
+
+            }
         }
     }
 
@@ -1855,44 +2143,6 @@ void viewWrongWordList(const vector<Word>& wrongWordList) {
     }
     system("cls");
 }
-
-
-/*
-오답노트에 한 번이라도 들어갔던 단어 조회 함수 viewWrongWordHistoryList()
-@param wrongWordHistoryList wrongWordHistoryList 또는 wrongAccHistoryList
-*/
-void viewWrongWordHistoryList(const vector<Word>& wrongWordHistoryList) {
-    system("cls");
-    auto it = wrongWordHistoryList.begin();
-    string userinput;
-    if (wrongWordHistoryList.empty()) {
-        cout << "현재 한 번이라도 오답노트에 들어갔던 단어가 없습니다." << endl;
-    }
-    else {
-        // 단어 모두 출력
-        cout << "[영단어 - 한글 뜻 - 음절 수 - 강세 위치]" << endl;
-        for (it = wrongWordHistoryList.begin(); it != wrongWordHistoryList.end(); ++it) {
-            cout << "[" << it->eng << " - ";
-            printStringArray(it->kor, it->cnt, false);
-            cout << " - " << it->syll << " - " << it->acc << "]" << endl;
-        }
-    }
-
-    cout << "조회 나가기 - Q" << endl;
-    getline(cin, userinput);
-    userinput = lowerString(userinput);
-    while (userinput != "q")
-    {
-        system("cls");
-        cout << "조회 나가기 - Q" << endl;
-        cout << "Q만 입력해주세요" << endl;
-        getline(cin, userinput);
-        userinput = lowerString(userinput);
-    }
-    system("cls");
-
-}
-
 
 /*
 오답단어 조회 메뉴 viewWrong()
@@ -1915,19 +2165,19 @@ void viewWrong() {
         menuSelect = input2int(viewipt);
 
         if (menuSelect == 1) {
-            viewWrongWordList(wrongWordList);
+            viewWrongList(wrongWordList, false, false);
             viewFirst = 0;
         }
         else if (menuSelect == 2) {
-            viewWrongWordHistoryList(wrongWordHistoryList);
+            viewWrongList(wrongWordHistoryList, true, false);
             viewFirst = 0;
         }
         else if (menuSelect == 3) {
-            viewWrongWordList(wrongAccList);
+            viewWrongList(wrongAccList, false, true);
             viewFirst = 0;
         }
         else if (menuSelect == 4) {
-            viewWrongWordHistoryList(wrongAccHistoryList);
+            viewWrongList(wrongAccHistoryList, true, true);
             viewFirst = 0;
         }
         else if (menuSelect == 0) {
