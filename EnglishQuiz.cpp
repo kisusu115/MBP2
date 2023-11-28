@@ -401,6 +401,12 @@ void loadWordsFromWordFile(const string& fileName) {
                     exit(0);
                 }
 
+                // 강세위치가 음절 수보다 클 수 없음
+                if (acc > syll) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
                 // 한글 뜻 읽어오기
                 line = line.substr(pos + 1);
                 pos = line.find(",");
@@ -586,6 +592,12 @@ void loadWordsFromWrongAccentFile(const string& fileName, vector<Word>& wordVect
                     exit(0);
                 }
 
+                // 강세위치가 음절 수보다 클 수 없음
+                if (acc > syll) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
+
                 std::vector<Word>::iterator it;
                 string tempKor[KOR_MAX];
                 for (int i = 0; i < KOR_MAX; i++) {
@@ -665,6 +677,9 @@ void pushWrongQuizWord(QuizWord wrongWord) {
             it->kor[it->cnt] = wrongWord.kor;
             it->cnt++;
         }
+        else {
+            cout << "해당 영단어가 이미 존재합니다." << endl;
+        }
     }
     exist = false;
 
@@ -709,6 +724,8 @@ void pushWrongAccentQuizWord(Word wrongWord) {
         for (int i = 0; i < KOR_MAX; i++)
             kor[i] = "";
         wrongAccList.push_back(Word(wrongWord.eng, kor, 0, wrongWord.syll, wrongWord.acc));
+    } else {
+        cout << "해당 영단어가 이미 존재합니다." << endl;
     }
     exist = false;
 
@@ -837,29 +854,7 @@ void editWrongList(vector<Word>& wordVector, const Word& editedWord, bool acc) {
         // 오답노트에 수정한 단어가 존재한다면
         vector<Word>::iterator wordIt;
         if (findInWordList(wordVector, wordIt, editedWord.eng)) {
-            string tempKor[KOR_MAX];
-            for (int i = 0; i < KOR_MAX; i++)
-                tempKor[i] = "";
-            // 오답노트에 있는 한글 뜻과 수정된 한글 뜻을 비교
-            int tempKorIndex = 0;
-            for (int i = 0; i < KOR_MAX; i++) {
-                // 오답노트에 있는 한글 뜻이 수정된 한글 뜻과 일치하는 것이 없다면 삭제, 있으면 남겨둠
-                bool exist = false;
-                for (int j = 0; j < KOR_MAX; j++) {
-                    if (wordIt->kor[i] == editedWord.kor[j] && wordIt->kor[i] != "") {
-                        exist = true;
-                        break;
-                    }
-                }
-                if (exist)
-                    tempKor[tempKorIndex++] = wordIt->kor[i];
-            }
-
-            for (int i = 0; i < KOR_MAX; i++)
-                wordIt->kor[i] = tempKor[i];
-
-            wordIt->cnt = tempKorIndex;
-            // 음절 및 강세 위치도 반영
+            // 음절 및 강세 위치 반영
             wordIt->syll = editedWord.syll;
             wordIt->acc = editedWord.acc;
         }
@@ -1309,7 +1304,7 @@ void totalQuiz() {
     }
 
     while (true) {
-        cout << "퀴즈 문제 수를 입력하세요: ";
+        cout << "퀴즈 문제 수를 입력하세요 (메인 메뉴로 돌아가려면 0 입력): ";
         qCheck = false;
 
         string quizipt;
@@ -1318,10 +1313,14 @@ void totalQuiz() {
 
         goalCount = input2int(quizipt);
 
-        if (goalCount <= 0) {
+        if (goalCount < 0) {
             system("cls");
             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
             continue;
+        }
+        else if (goalCount == 0) {
+            system("cls");
+            return;
         }
         else if (goalCount <= quizWordVector.size())
             break;
@@ -1407,7 +1406,6 @@ void totalQuiz() {
                 system("cls");
                 cout << "틀렸습니다." << endl;
                 cout << "틀린 단어의 정답: " << randomQuizWord.eng << endl;
-                cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
                 cout << "다음 문제로 - Q" << endl;
                 cout << "Q만 입력해주세요." << endl;
                 getline(cin, userinput);
@@ -1495,7 +1493,7 @@ void wrongQuiz() {
     }
 
     while (true) {
-        cout << "퀴즈 문제 수를 입력하세요: ";
+        cout << "퀴즈 문제 수를 입력하세요 (메인 메뉴로 돌아가려면 0 입력): ";
         qCheck = false;
 
         string quizipt;
@@ -1507,7 +1505,10 @@ void wrongQuiz() {
             system("cls");
             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
         }
-
+        else if (goalCount == 0) {
+            system("cls");
+            return;
+        }
         else if (goalCount <= quizWordVector.size())
             break;
         else
@@ -1701,7 +1702,7 @@ void totalAccentQuiz() {
     }
 
     while (true) {
-        cout << "퀴즈 문제 수를 입력하세요: ";
+        cout << "퀴즈 문제 수를 입력하세요 (메인 메뉴로 돌아가려면 0 입력): ";
         qCheck = false;
 
         string quizipt;
@@ -1714,6 +1715,10 @@ void totalAccentQuiz() {
             system("cls");
             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
             continue;
+        }
+        else if (goalCount == 0) {
+            system("cls");
+            return;
         }
         else if (goalCount <= quizWordVector.size())
             break;
@@ -1806,7 +1811,6 @@ void totalAccentQuiz() {
                 system("cls");
                 cout << "틀렸습니다." << endl;
                 cout << "틀린 단어의 강세 위치 정답: " << randomWord.acc << endl;
-                cout << "해당 단어는 이미 오답노트에 존재합니다." << endl;
                 cout << "다음 문제로 - Q" << endl;
                 cout << "Q만 입력해주세요." << endl;
                 getline(cin, userinput);
@@ -1875,7 +1879,7 @@ void wrongAccentQuiz() {
     }
 
     while (true) {
-        cout << "퀴즈 문제 수를 입력하세요: ";
+        cout << "퀴즈 문제 수를 입력하세요 (메인 메뉴로 돌아가려면 0 입력): ";
         qCheck = false;
 
         string quizipt;
@@ -1888,6 +1892,10 @@ void wrongAccentQuiz() {
             system("cls");
             cout << "1 이상의 정수값을 입력해야 합니다. 다시 입력해주세요." << endl;
             continue;
+        }
+        else if (goalCount == 0) {
+            system("cls");
+            return;
         }
         else if (goalCount <= wrongAccList.size())
             break;
