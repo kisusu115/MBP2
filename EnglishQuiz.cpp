@@ -412,10 +412,12 @@ void loadWordsFromWordFile(const string& fileName) {
                 pos = line.find(",");
                 string kor[KOR_MAX];
                 int cnt = 0;
+                string ko;
+                wstring k;
 
                 while (pos != string::npos) {
-                    string ko = line.substr(0, pos);
-                    wstring k = s2w(ko);
+                    ko = line.substr(0, pos);
+                    k = s2w(ko);
                     if (checkKor(k) == 0) {
                         cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
                         exit(0);
@@ -427,6 +429,11 @@ void loadWordsFromWordFile(const string& fileName) {
                     pos = line.find(",");
                 }
 
+                k = s2w(line);
+                if (checkKor(k) == 0) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
                 kor[cnt] = line;
                 cnt++; // 길이 = 마지막 인덱스 + 1
 
@@ -492,10 +499,12 @@ void loadWordsFromWrongWordFile(const string& fileName, vector<Word>& wordVector
                 pos = line.find(",");
                 string kor[KOR_MAX];
                 int cnt = 0;
+                string ko;
+                wstring k;
 
                 while (pos != string::npos) {
-                    string ko = line.substr(0, pos);
-                    wstring k = s2w(ko);
+                    ko = line.substr(0, pos);
+                    k = s2w(ko);
                     if (checkKor(k) == 0) {
                         cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
                         exit(0);
@@ -506,7 +515,12 @@ void loadWordsFromWrongWordFile(const string& fileName, vector<Word>& wordVector
                     line = line.substr(pos + 1);
                     pos = line.find(",");
                 }
-
+                
+                k = s2w(line);
+                if (checkKor(k) == 0) {
+                    cout << fileName << " 파일 형식에 문제가 있습니다.\n프로그램을 종료합니다." << endl;
+                    exit(0);
+                }
                 kor[cnt] = line;
                 cnt++; // 길이 = 마지막 인덱스 + 1
 
